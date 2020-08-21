@@ -22,7 +22,12 @@ public class LendingBookService {
     }
 
     public boolean updateStatus(LendingBook lendingBook) {
-        return lendingBookDAO.updateStatus(lendingBook);
+        if (lendingBook.getBookStatus().equals("Lended")) {
+            return lendingBookDAO.updateStatus(lendingBook);
+        } else {
+            return lendingBookDAO.updateAvailable(lendingBook);
+        }
+
     }
 
     public List<LendingBook> getLendedBook(String username) {

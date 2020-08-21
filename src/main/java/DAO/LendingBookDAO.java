@@ -52,37 +52,17 @@ public class LendingBookDAO {
     }
 
     public boolean updateStatus(LendingBook lendingBook) {
-        if (lendingBook.getBookStatus().equals("Lended")) {
-            Connect connect = new Connect();
-            try {
-                try (Connection con = connect.connectDB();
-                     PreparedStatement stmt = con.prepareStatement("Update `Book` set bookStatus = ? where bookID = ?")) {
-                    stmt.setInt(2, lendingBook.getBookID());
-                    stmt.setString(1, "Not available");
-                    int isAdd = stmt.executeUpdate();
-                    return isAdd > 0;
-                }
-            } catch (SQLException throwables) {
-                System.out.println("Error when connect database");
+        Connect connect = new Connect();
+        try {
+            try (Connection con = connect.connectDB();
+                 PreparedStatement stmt = con.prepareStatement("Update `Book` set bookStatus = ? where bookID = ?")) {
+                stmt.setInt(2, lendingBook.getBookID());
+                stmt.setString(1, "Not available");
+                int isAdd = stmt.executeUpdate();
+                return isAdd > 0;
             }
-        } else {
-            Connect connect = new Connect();
-            try {
-                try (Connection con = connect.connectDB();
-                     PreparedStatement stmt = con.prepareStatement("Update `Book` set bookStatus = ? where bookID = ?");
-                     PreparedStatement stmt1 = con.prepareStatement("Update `LendingBook` set bookStatus = ? " +
-                             "where bookId = ?")) {
-                    stmt.setString(1, "Available");
-                    stmt.setInt(2, lendingBook.getBookID());
-                    stmt1.setString(1, "Returned");
-                    stmt1.setInt(2, lendingBook.getBookID());
-                    int isAdd = stmt.executeUpdate();
-                    int isAdd1 = stmt1.executeUpdate();
-                    return isAdd > 0 && isAdd1 > 0;
-                }
-            } catch (SQLException throwables) {
-                System.out.println("Error when connect database");
-            }
+        } catch (SQLException throwables) {
+            System.out.println("Error when connect database");
         }
         return false;
     }
@@ -108,6 +88,26 @@ public class LendingBookDAO {
         return Optional.empty();
     }
 
+    public boolean updateAvailable(LendingBook lendingBook) {
+        Connect connect = new Connect();
+        try {
+            try (Connection con = connect.connectDB();
+                 PreparedStatement stmt = con.prepareStatement("Update `Book` set bookStatus = ? where bookID = ?");
+                 PreparedStatement stmt1 = con.prepareStatement("Update `LendingBook` set bookStatus = ? " +
+                         "where bookId = ?")) {
+                stmt.setString(1, "Available");
+                stmt.setInt(2, lendingBook.getBookID());
+                stmt1.setString(1, "Returned");
+                stmt1.setInt(2, lendingBook.getBookID());
+                int isAdd = stmt.executeUpdate();
+                int isAdd1 = stmt1.executeUpdate();
+                return isAdd > 0 && isAdd1 > 0;
+            }
+        } catch (SQLException throwables) {
+            System.out.println("Error when connect database");
+        }
+        return false;
+    }
 
     public boolean updateReturnDate(LendingBook lendingBook) {
         Connect connect = new Connect();
@@ -132,4 +132,6 @@ public class LendingBookDAO {
                 rs.getDate("dueDate").toLocalDate());
         return lendingBook;
     }
+
+
 }
