@@ -10,6 +10,27 @@ import java.util.Optional;
 
 public class BookDAO {
 
+    public boolean isBookExist(String nameBook, Author author) {
+        Connect connect = new Connect();
+        try {
+            try (Connection con = connect.connectDB();
+                 PreparedStatement stmt = con.prepareStatement("Select *  From `Book` where nameBook = ? and authorID = ?") ){
+                stmt.setString(1, nameBook);
+                stmt.setInt(2, author.getAuthorID());
+
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return false;
+    }
+
     public boolean addBook(int price, int numberPage, String nameBook, String bookStatus, String language,
                                   Author author, Category category, CodeLocation codeLocation, LocalDate date) {
         Connect connect = new Connect();
@@ -17,7 +38,7 @@ public class BookDAO {
             try (Connection con = connect.connectDB();
                  PreparedStatement stmt = con.prepareStatement("Insert into `Book` (nameBook, bookStatus, codeLocation," +
                          " authorID, categoryID, price, language, numberPage, dateBuy) " +
-                         "values (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS) ){
+                         "values (?, ?, ?, ?, ?, ?, ?, ?, ?)") ){
                 stmt.setString(1, nameBook);
                 stmt.setString(2, bookStatus);
                 stmt.setString(3, codeLocation.getCode());
@@ -31,7 +52,7 @@ public class BookDAO {
                 return isAdd > 0;
             }
         } catch (SQLException throwables) {
-            System.out.println("Error when connect database");
+            throwables.printStackTrace();
         }
         return false;
     }
@@ -192,9 +213,14 @@ public class BookDAO {
     }
 
     public Book bookRowMapper(ResultSet rs, Author author, Category category, CodeLocation codeLocation) throws SQLException {
-
+        BookStatus.Status status;
+            if (rs.getObject("bookStatus").equals("Available")) {
+                status = BookStatus.Status.Available;
+            } else {
+                status = BookStatus.Status.NotAvailable;
+            }
             Book book = new Book(rs.getInt("bookID"), rs.getInt("price"), rs.getInt("numberPage"),
-                    rs.getString("nameBook"), rs.getString("bookStatus"), rs.getString("language"), author, category,
+                    rs.getString("nameBook"), status, rs.getString("language"), author, category,
                     codeLocation, rs.getDate("dateBuy").toLocalDate());
             return book;
     }

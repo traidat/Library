@@ -12,12 +12,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main {
+
     static Account currentAccount = new Account();
     public static void main(String[] args) throws SQLException {
 
         Scanner scanner = new Scanner(System.in);
         boolean isQuit = false;
-        String options = "sign(U)p L)ogin Q)uit";
+        String options = "sign(U)p Log I)n Q)uit";
         while (!isQuit) {
             System.out.println(options);
             String temp = scanner.nextLine();
@@ -31,35 +32,34 @@ public class Main {
                     options = "S)earch C)heck-out Q)uit";
                 } break;
                 // Dang nhap
-                case "l": {
+                case "i": {
                     Optional<Account> account = logIn();
                     if (account.isPresent()) {
                         currentAccount = account.get();
-                        System.out.println("Login success");
+                        System.out.println("Welcome " + currentAccount.getOwner().getName());
                         if (currentAccount.getAccountType().equals("Librarian")) {
-                            options = "S)earch C)heck-out Show B)orrowed book R)eturn book F)ull book " +
-                                    "A)dd book M)odify book Q)uit";
+                            options = "S)earch L)end book B)orrowed book R)eturn book E)xtend" +
+                                    " A)dd book M)odify book Q)uit";
                         } else {
-                            options = "S)earch C)heck-out Show B)orrowed book R)eturn book F)ull book Q)uit";
+                            options = "S)earch C)heck-out Show B)orrowed book R)eturn book E)xtend Q)uit";
                         }
                     }
                 } break;
                 // Them sach
                 case "a": {
                     addBook();
-                    showAllBook();
                 } break;
                 // Tim sach
                 case  "s" : {
                     searchBook();
                 } break;
-                // Hien thi toan bo sach
-                case "f": {
-                    showAllBook();
+                // Gia han
+                case "e": {
+                    extend();
                 } break;
                 // Muon sach
-                case "c": {
-                    checkoutBook();
+                case "l": {
+                    lendingBook();
                 } break;
                 // Xem sach da muon
                 case "b": {
@@ -79,8 +79,42 @@ public class Main {
         }
     }
 
+    private static void extend() {
+        borrowedBook();
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Fill in id book you want extend: ");
+        int bookID = Integer.parseInt(scanner.nextLine());
+
+        LendingBookService lendingBookService = new LendingBookService();
+
+        List<LendingBook> lendedBook = currentAccount.getOwner().getBookLending();
+        for (int i = 0; i < lendedBook.size(); i++) {
+            if (lendedBook.get(i).getBookID() == bookID && lendingBookService.updateStatus(lendedBook.get(i)) && lendingBookService.updateReturnDate(lendedBook.get(i))) {
+                lendedBook.get(i).setBookStatus(BookStatus.Status.Returned);
+                lendingBookService.updateStatus(lendedBook.get(i));
+                lendingBookService.updateReturnDate(lendedBook.get(i));
+                lendedBook.remove(i);
+            }
+        }
+        currentAccount.getOwner().setBookLending(lendedBook);
+        LocalDate lendingDate = LocalDate.now();
+
+        LendingBook lendingBook = new LendingBook(bookID, BookStatus.Status.Lended, currentAccount.getUsername(),
+                lendingDate, lendingDate.plusDays(10));
+        boolean isLend = lendingBookService.lending(bookID, currentAccount);
+        if (isLend) {
+            System.out.println("Extend success");
+            lendingBookService.updateStatus(lendingBook);
+            lendedBook = currentAccount.getOwner().getBookLending();
+            lendedBook.add(lendingBook);
+            currentAccount.getOwner().setBookLending(lendedBook);
+        } else {
+            System.out.println("Extend failed");
+        }
+        borrowedBook();
+    }
+
     private static void modifyBook()  {
-        showAllBook();
         Scanner scanner = new Scanner(System.in);
         System.out.print("Fill in id book: ");
         int bookID = Integer.parseInt(scanner.nextLine());
@@ -89,12 +123,25 @@ public class Main {
         if (optionalBook.isPresent()) {
             Book book = optionalBook.get();
             book.showBook();
+            System.out.println("Please type all row:");
             System.out.print("Name book: ");
             String nameBook = scanner.nextLine();
             System.out.print("Page number: ");
-            int numberPage = Integer.parseInt(scanner.nextLine());
+            String temp = scanner.nextLine();
+            int numberPage;
+            if (temp != "") {
+                numberPage = Integer.parseInt(temp);
+            } else {
+                numberPage = 0;
+            }
             System.out.print("Price: ");
-            int price = Integer.parseInt(scanner.nextLine());
+            temp = scanner.nextLine();
+            int price;
+            if (temp != "") {
+                price = Integer.parseInt(temp);
+            } else {
+                price = 0;
+            }
             System.out.print("Language: ");
             String language = scanner.nextLine();
             System.out.print("Author name: ");
@@ -131,7 +178,7 @@ public class Main {
     private static void returnBook()  {
         borrowedBook();
         Scanner scanner = new Scanner(System.in);
-        System.out.print("Fill in id book: ");
+        System.out.print("Fill in id book you want to return: ");
         int bookID = Integer.parseInt(scanner.nextLine());
 
         LendingBookService lendingBookService = new LendingBookService();
@@ -139,9 +186,10 @@ public class Main {
         List<LendingBook> lendedBook = currentAccount.getOwner().getBookLending();
         for (int i = 0; i < lendedBook.size(); i++) {
             if (lendedBook.get(i).getBookID() == bookID && lendingBookService.updateStatus(lendedBook.get(i)) && lendingBookService.updateReturnDate(lendedBook.get(i))) {
-                lendedBook.get(i).setBookStatus("Returned");
+                lendedBook.get(i).setBookStatus(BookStatus.Status.Returned);
                 lendingBookService.updateStatus(lendedBook.get(i));
                 lendingBookService.updateReturnDate(lendedBook.get(i));
+                System.out.println("Return book id " + lendedBook.get(i).getBookID() + " success");
                 lendedBook.remove(i);
             }
         }
@@ -151,34 +199,39 @@ public class Main {
 
     private static void borrowedBook() {
         List<LendingBook> borrowedBooks = currentAccount.getOwner().getBookLending();
-        if (borrowedBooks != null) {
+        if (borrowedBooks.size() > 0) {
             for (LendingBook i : borrowedBooks) {
                 i.showLendingBook();
             }
+        } else {
+            System.out.println("You have not borrowed any book");
         }
     }
 
-    private static void checkoutBook() {
-        showAllBook();
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Fill in id book: ");
-        int bookID = Integer.parseInt(scanner.nextLine());
-        LocalDate lendingDate = LocalDate.now();
-
-        LendingBook lendingBook = new LendingBook(bookID,"Lended", currentAccount.getUsername(),
-                lendingDate, lendingDate.plusDays(10));
-        LendingBookService lendingBookService = new LendingBookService();
-        boolean isLend = lendingBookService.lending(bookID, currentAccount);
-        if (isLend) {
-            System.out.println("Lend success");
+    private static void lendingBook() {
+        if (currentAccount.getOwner().getBookLending().size() >= 5) {
+            System.out.println("You can not lend more than 5 book");
         } else {
-            System.out.println("Lend failed");
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Fill in id book you want to lend: ");
+            int bookID = Integer.parseInt(scanner.nextLine());
+            LocalDate lendingDate = LocalDate.now();
+
+            LendingBook lendingBook = new LendingBook(bookID, BookStatus.Status.Lended, currentAccount.getUsername(),
+                    lendingDate, lendingDate.plusDays(10));
+            LendingBookService lendingBookService = new LendingBookService();
+            boolean isLend = lendingBookService.lending(bookID, currentAccount);
+            if (isLend) {
+                System.out.println("Lend success");
+                lendingBookService.updateStatus(lendingBook);
+                List<LendingBook> lendedBook = currentAccount.getOwner().getBookLending();
+                lendedBook.add(lendingBook);
+                currentAccount.getOwner().setBookLending(lendedBook);
+                borrowedBook();
+            } else {
+                System.out.println("Lend failed");
+            }
         }
-        lendingBookService.updateStatus(lendingBook);
-        List<LendingBook> lendedBook = currentAccount.getOwner().getBookLending();
-        lendedBook.add(lendingBook);
-        currentAccount.getOwner().setBookLending(lendedBook);
-        borrowedBook();
     }
 
     private static void searchBook()  {
@@ -191,8 +244,13 @@ public class Main {
                 String name = scanner.nextLine();
                 BookService bookService = new BookService();
                 List<Book> books = bookService.searchByName(name);
-                for (Book b : books) {
-                    b.showBook();
+                if (books.size() == 0) {
+                    System.out.println("Can't find the right book");
+                } else {
+                    for (Book b : books) {
+                        b.showBook();
+                    }
+                    lendingBook();
                 }
             } break;
             case "2": {
@@ -200,8 +258,13 @@ public class Main {
                 String author = scanner.nextLine();
                 BookService bookService = new BookService();
                 List<Book> books = bookService.searchByAuthor(author);
-                for (Book b : books) {
-                    b.showBook();
+                if (books.size() == 0) {
+                    System.out.println("Can't find the right book");
+                } else {
+                    for (Book b : books) {
+                        b.showBook();
+                    }
+                    lendingBook();
                 }
             } break;
             case "3": {
@@ -209,8 +272,13 @@ public class Main {
                 String category = scanner.nextLine();
                 BookService bookService = new BookService();
                 List<Book> books = bookService.searchByCategory(category);
-                for (Book b : books) {
-                    b.showBook();
+                if (books.size() == 0) {
+                    System.out.println("Can't find the right book");
+                } else {
+                    for (Book b : books) {
+                        b.showBook();
+                    }
+                    lendingBook();
                 }
             }
         }
@@ -221,30 +289,60 @@ public class Main {
         System.out.print("Name book: ");
         String nameBook = scanner.nextLine();
         System.out.print("Page number: ");
-        int numberPage = Integer.parseInt(scanner.nextLine());
+        String temp = scanner.nextLine();
+        int numberPage;
+        if (!temp.equals("")) {
+            numberPage = Integer.parseInt(temp);
+        } else {
+            numberPage = 0;
+        }
         System.out.print("Price: ");
-        int price = Integer.parseInt(scanner.nextLine());
+        temp = scanner.nextLine();
+        int price;
+        if (!temp.equals("")) {
+            price = Integer.parseInt(temp);
+        } else {
+            price = 0;
+        }
         System.out.print("Language: ");
         String language = scanner.nextLine();
 
-        System.out.print("Author name: ");
-        String authorName = scanner.nextLine();
-        System.out.print("Author detail: ");
-        String authorDetail = scanner.nextLine();
-        AuthorService authorService = new AuthorService();
-        Optional<Author> optionalAuthor = authorService.addAuthor(authorName, authorDetail);
+        boolean checkAuthor = false;
+        Optional<Author> optionalAuthor = Optional.of(new Author());
+        while (!checkAuthor) {
+            System.out.print("Author name: ");
+            String authorName = scanner.nextLine();
+            System.out.print("Author detail: ");
+            String authorDetail = scanner.nextLine();
+            AuthorService authorService = new AuthorService();
+            if (!authorName.equals("")) {
+                optionalAuthor = authorService.addAuthor(authorName, authorDetail);
+                if (optionalAuthor.isPresent()) {
+                    checkAuthor = true;
+                }
+            } else {
+                System.out.println("Author invalid");
+            }
+        }
 
         System.out.print("Select category F)iction R)omantic T)hriller: ");
         String category = scanner.nextLine();
         CategoryService categoryService = new CategoryService();
         Optional<Category> optionalCategory = categoryService.getCategory(category);
 
-        System.out.print("Code Location: ");
-        String code = scanner.nextLine();
-        System.out.print("Code Location detail: ");
-        String codeDetail = scanner.nextLine();
-        CodeService codeService = new CodeService();
-        Optional<CodeLocation> optionalCodeLocation = codeService.addCode(code, codeDetail);
+        Optional<CodeLocation> optionalCodeLocation = Optional.of(new CodeLocation());
+        boolean checkCode = false;
+        while (!checkCode) {
+            System.out.print("Code Location: ");
+            String code = scanner.nextLine();
+            System.out.print("Code Location detail: ");
+            String codeDetail = scanner.nextLine();
+            CodeService codeService = new CodeService();
+            optionalCodeLocation = codeService.addCode(code, codeDetail);
+            if (optionalCodeLocation.isPresent()) {
+                checkCode = true;
+            }
+        }
 
         System.out.print("Date buy: ");
         String dateBuy = scanner.nextLine();
@@ -256,11 +354,11 @@ public class Main {
             Category category1 = optionalCategory.get();
             Author author = optionalAuthor.get();
             BookService bookService = new BookService();
-            if (bookService.addBook(price, numberPage, nameBook, "Available", language, author,
+            if (bookService.addBook(price, numberPage, nameBook, String.valueOf(BookStatus.Status.Available), language, author,
                     category1, codeLocation, localDate)) {
                 System.out.println("Add book success");
             } else {
-                System.out.println("Add book failed");
+                System.out.println("Book already exist");
             }
         }
     }
@@ -336,15 +434,15 @@ public class Main {
 
     }
 
-    private static void showAllBook() {
-        BookService bookService = new BookService();
-        List<Book> allBook = bookService.allBook();
-        if (allBook.size() > 0) {
-            for (Book b : allBook) {
-                if (b.getBookStatus().equals("Available")) {
-                    b.showBook();
-                }
-            }
-        }
-    }
+//    private static void showAllBook() {
+//        BookService bookService = new BookService();
+//        List<Book> allBook = bookService.allBook();
+//        if (allBook.size() > 0) {
+//            for (Book b : allBook) {
+//                if (b.getBookStatus().equals("Available")) {
+//                    b.showBook();
+//                }
+//            }
+//        }
+//    }
 }

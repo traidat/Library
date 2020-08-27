@@ -14,7 +14,11 @@ public class BookService {
 
     public boolean addBook(int price, int numberPage, String nameBook, String bookStatus, String language,
                            Author author, Category category, CodeLocation codeLocation, LocalDate date) {
-        return bookDAO.addBook(price, numberPage, nameBook, bookStatus, language, author, category, codeLocation, date);
+        if (bookDAO.isBookExist(nameBook, author)) {
+            return bookDAO.addBook(price, numberPage, nameBook, bookStatus, language, author, category, codeLocation, date);
+        } else {
+            return false;
+        }
     }
 
     public List<Book> allBook() {

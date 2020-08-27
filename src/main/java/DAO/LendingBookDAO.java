@@ -126,12 +126,32 @@ public class LendingBookDAO {
         return false;
     }
 
+    public boolean updateDueDate(LendingBook lendingBook) {
+        Connect connect = new Connect();
+        try {
+            try (Connection con = connect.connectDB();
+                 PreparedStatement stmt = con.prepareStatement("Update `LendingBook` set dueDate = ? where bookID = ?")) {
+                stmt.setInt(2, lendingBook.getBookID());
+                stmt.setDate(1, Date.valueOf(lendingBook.getDueDate().plusDays(10)));
+                int isUpdate = stmt.executeUpdate();
+                return isUpdate > 0;
+            }
+        } catch (SQLException throwables) {
+            System.out.println("Error when connect database");
+        }
+        return false;
+    }
+
     public LendingBook lendingRowMapper(ResultSet rs) throws SQLException {
-        LendingBook lendingBook = new LendingBook(rs.getInt("bookID"), rs.getString("bookStatus"),
+        BookStatus.Status status;
+        if (rs.getObject("bookStatus").equals("Lended")) {
+            status = BookStatus.Status.Lended;
+        } else {
+            status = BookStatus.Status.Returned;
+        }
+        LendingBook lendingBook = new LendingBook(rs.getInt("bookID"), status,
                 rs.getString("username"), rs.getDate("lendingDate").toLocalDate(),
                 rs.getDate("dueDate").toLocalDate());
         return lendingBook;
     }
-
-
 }

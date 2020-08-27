@@ -12,7 +12,7 @@ public class CodeDAO {
         try {
             try (Connection con = connect.connectDB();
                  PreparedStatement stmt1 = con.prepareStatement("Insert into `CodeLocation` (code, codeDetail) " +
-                         "values (?, ?)");) {
+                         "values (?, ?)")) {
                 stmt1.setString(1, code);
                 stmt1.setString(2, codeDetail);
                 int idAdd = stmt1.executeUpdate();

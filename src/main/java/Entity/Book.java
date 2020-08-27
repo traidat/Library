@@ -5,13 +5,14 @@ import java.time.LocalDate;
 
 public class Book {
     private int bookID, price, numberPage;
-    private String nameBook, bookStatus, language;
+    private String nameBook, language;
+    private BookStatus.Status bookStatus;
     private Author author;
     private Category category;
     private CodeLocation codeLocation;
     private LocalDate date;
 
-    public Book(int price, int numberPage, String nameBook, String bookStatus,
+    public Book(int price, int numberPage, String nameBook, BookStatus.Status bookStatus,
                 String language, Author author, Category category, CodeLocation codeLocation, LocalDate date) {
         this.price = price;
         this.numberPage = numberPage;
@@ -24,7 +25,7 @@ public class Book {
         this.date = date;
     }
 
-    public Book(int bookID, int price, int numberPage, String nameBook, String bookStatus, String language,
+    public Book(int bookID, int price, int numberPage, String nameBook, BookStatus.Status bookStatus, String language,
                 Author author, Category category, CodeLocation codeLocation, LocalDate date) {
         this.bookID = bookID;
         this.price = price;
@@ -73,11 +74,12 @@ public class Book {
         this.nameBook = nameBook;
     }
 
-    public String getBookStatus() {
+
+    public BookStatus.Status getBookStatus() {
         return bookStatus;
     }
 
-    public void setBookStatus(String bookStatus) {
+    public void setBookStatus(BookStatus.Status bookStatus) {
         this.bookStatus = bookStatus;
     }
 
@@ -122,6 +124,7 @@ public class Book {
     }
 
     public void showBook() {
-        System.out.println("Book " + this.getBookID() + ": " + this.getNameBook() + " by " + this.getAuthor().getAuthorName());
+        System.out.printf("Book %d:%s by %s, category: %s, langauge: %s, status: %s\n", this.bookID, this.nameBook, this.author.getAuthorName(),
+                this.category.getCategoryName(), this.language, this.bookStatus);
     }
 }

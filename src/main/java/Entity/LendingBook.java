@@ -8,10 +8,11 @@ import java.util.Optional;
 
 public class LendingBook {
     private int bookID;
-    private String bookStatus, username;
+    private String username;
+    private BookStatus.Status bookStatus;
     private LocalDate lendingDate, dueDate, returnDate;
 
-    public LendingBook(int bookID, String bookStatus, String username, LocalDate lendingDate, LocalDate dueDate) {
+    public LendingBook(int bookID, BookStatus.Status bookStatus, String username, LocalDate lendingDate, LocalDate dueDate) {
         this.bookID = bookID;
         this.bookStatus = bookStatus;
         this.username = username;
@@ -23,13 +24,7 @@ public class LendingBook {
         return bookID;
     }
 
-    public String getBookStatus() {
-        return bookStatus;
-    }
 
-    public void setBookStatus(String bookStatus) {
-        this.bookStatus = bookStatus;
-    }
 
     public String getUsername() {
         return username;
@@ -37,6 +32,14 @@ public class LendingBook {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public BookStatus.Status getBookStatus() {
+        return bookStatus;
+    }
+
+    public void setBookStatus(BookStatus.Status bookStatus) {
+        this.bookStatus = bookStatus;
     }
 
     public LocalDate getLendingDate() {

@@ -10,6 +10,10 @@ public class Author {
         this.authorDetail = authorDetail;
     }
 
+    public Author() {
+
+    }
+
     public int getAuthorID() {
         return authorID;
     }

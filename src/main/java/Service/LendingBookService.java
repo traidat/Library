@@ -15,14 +15,14 @@ public class LendingBookService {
     public boolean lending(int id, Account account) {
         Optional<Book> book = bookDAO.getBook(id);
         boolean isLend = false;
-        if (book.isPresent()) {
+        if (book.isPresent() && (book.get().getBookStatus() == BookStatus.Status.Available)) {
             isLend = lendingBookDAO.addLendingBook(id, account);
         }
         return isLend;
     }
 
     public boolean updateStatus(LendingBook lendingBook) {
-        if (lendingBook.getBookStatus().equals("Lended")) {
+        if (lendingBook.getBookStatus().equals(BookStatus.Status.Lended)) {
             return lendingBookDAO.updateStatus(lendingBook);
         } else {
             return lendingBookDAO.updateAvailable(lendingBook);
@@ -36,6 +36,10 @@ public class LendingBookService {
         } else {
             return new ArrayList<>();
         }
+    }
+
+    public boolean updateDueDate(LendingBook lendingBook) {
+        return lendingBookDAO.updateDueDate(lendingBook);
     }
 
     public boolean updateReturnDate(LendingBook lendingBook) {

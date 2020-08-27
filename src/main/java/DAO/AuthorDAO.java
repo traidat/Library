@@ -20,7 +20,7 @@ public class AuthorDAO {
                 return isAdd > 0;
             }
         } catch (SQLException throwables) {
-            System.out.println("Error when connect database");
+            System.out.println("Author invalid");
         }
         return false;
     }

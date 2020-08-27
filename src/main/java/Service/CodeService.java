@@ -9,8 +9,9 @@ public class CodeService {
     private CodeDAO codeDAO = new CodeDAO();
 
     public Optional<CodeLocation> addCode(String code, String codeDetail) {
-        if (codeDAO.addCode(code, codeDetail).isPresent()) {
-            return codeDAO.addCode(code, codeDetail);
+        Optional<CodeLocation> tempCode = codeDAO.addCode(code, codeDetail);
+        if (tempCode.isPresent()) {
+            return tempCode;
         } else {
             return Optional.empty();
         }
